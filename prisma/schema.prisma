@@ -1,0 +1,314 @@
+// Prisma schema for CRM application
+// Uses snake_case naming convention and autoincrement Int IDs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// META TABLES
+// ============================================================================
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  created_by  Int?
+  updated_at  DateTime @updatedAt
+  updated_by  Int?
+
+  // Relations
+  users        User[]
+  created_user User?  @relation("RoleCreatedBy", fields: [created_by], references: [id], onDelete: Restrict)
+  updated_user User?  @relation("RoleUpdatedBy", fields: [updated_by], references: [id], onDelete: Restrict)
+
+  @@map("roles")
+  @@index([name])
+  @@index([is_active])
+}
+
+model LeadStatus {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  created_by  Int?
+  updated_at  DateTime @updatedAt
+  updated_by  Int?
+
+  // Relations
+  leads        Lead[]
+  created_user User?  @relation("LeadStatusCreatedBy", fields: [created_by], references: [id], onDelete: Restrict)
+  updated_user User?  @relation("LeadStatusUpdatedBy", fields: [updated_by], references: [id], onDelete: Restrict)
+
+  @@map("lead_statuses")
+  @@index([name])
+  @@index([is_active])
+}
+
+model Source {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  created_by  Int?
+  updated_at  DateTime @updatedAt
+  updated_by  Int?
+
+  // Relations
+  leads        Lead[]
+  created_user User?  @relation("SourceCreatedBy", fields: [created_by], references: [id], onDelete: Restrict)
+  updated_user User?  @relation("SourceUpdatedBy", fields: [updated_by], references: [id], onDelete: Restrict)
+
+  @@map("sources")
+  @@index([name])
+  @@index([is_active])
+}
+
+// ============================================================================
+// TRANSACTION TABLES
+// ============================================================================
+
+model User {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  phone      String?
+  password   String
+  is_active  Boolean  @default(true)
+  role_id    Int
+  created_at DateTime @default(now())
+  created_by Int?
+  updated_at DateTime @updatedAt
+  updated_by Int?
+
+  // Relations
+  role Role @relation(fields: [role_id], references: [id], onDelete: Restrict)
+
+  // Self-referential relations for audit fields
+  created_user User? @relation("UserCreatedBy", fields: [created_by], references: [id], onDelete: Restrict)
+  updated_user User? @relation("UserUpdatedBy", fields: [updated_by], references: [id], onDelete: Restrict)
+  users_created User[] @relation("UserCreatedBy")
+  users_updated User[] @relation("UserUpdatedBy")
+
+  // Leads relations
+  leads_assigned Lead[] @relation("LeadAssignedTo")
+  leads_created  Lead[] @relation("LeadCreatedBy")
+  leads_updated  Lead[] @relation("LeadUpdatedBy")
+
+  // Meta tables audit relations
+  roles_created         Role[]       @relation("RoleCreatedBy")
+  roles_updated         Role[]       @relation("RoleUpdatedBy")
+  lead_statuses_created LeadStatus[] @relation("LeadStatusCreatedBy")
+  lead_statuses_updated LeadStatus[] @relation("LeadStatusUpdatedBy")
+  sources_created       Source[]     @relation("SourceCreatedBy")
+  sources_updated       Source[]     @relation("SourceUpdatedBy")
+
+  // Work Items relations
+  work_items_assigned WorkItem[] @relation("WorkItemAssignedTo")
+  work_items_created  WorkItem[] @relation("WorkItemCreatedBy")
+  work_items_updated  WorkItem[] @relation("WorkItemUpdatedBy")
+
+  // Tasks relations
+  tasks_assigned Task[] @relation("TaskAssignedTo")
+  tasks_created  Task[] @relation("TaskCreatedBy")
+  tasks_updated  Task[] @relation("TaskUpdatedBy")
+
+  // Work Status audit relations
+  work_statuses_created WorkStatus[] @relation("WorkStatusCreatedBy")
+  work_statuses_updated WorkStatus[] @relation("WorkStatusUpdatedBy")
+
+  // Communications audit relations
+  communications_created Communication[] @relation("CommunicationCreatedBy")
+  communications_updated Communication[] @relation("CommunicationUpdatedBy")
+  comm_attachments_created CommunicationAttachment[] @relation("CommAttachCreatedBy")
+  comm_attachments_updated CommunicationAttachment[] @relation("CommAttachUpdatedBy")
+
+  @@map("users")
+  @@index([email])
+  @@index([name])
+  @@index([is_active])
+  @@index([role_id])
+}
+
+model Lead {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String?
+  phone        String?
+  status_id    Int
+  source_id    Int
+  assigned_to  Int?
+  notes        String?
+  is_converted Boolean  @default(false)
+  is_active    Boolean  @default(true)
+  created_at   DateTime @default(now())
+  created_by   Int
+  updated_at   DateTime @updatedAt
+  updated_by   Int
+
+  // Relations
+  status        LeadStatus @relation(fields: [status_id], references: [id], onDelete: Restrict)
+  source        Source     @relation(fields: [source_id], references: [id], onDelete: Restrict)
+  assigned_user User?      @relation("LeadAssignedTo", fields: [assigned_to], references: [id], onDelete: SetNull)
+  created_user  User       @relation("LeadCreatedBy", fields: [created_by], references: [id], onDelete: Restrict)
+  updated_user  User       @relation("LeadUpdatedBy", fields: [updated_by], references: [id], onDelete: Restrict)
+
+  // Work management back-relations
+  work_items    WorkItem[] @relation("WorkItemCustomer")
+  tasks         Task[]     @relation("TaskCustomer")
+  communications Communication[]
+
+  @@map("leads")
+  @@index([name])
+  @@index([email])
+  @@index([status_id])
+  @@index([source_id])
+  @@index([assigned_to])
+  @@index([is_converted])
+  @@index([is_active])
+  @@index([created_at])
+} 
+
+// ============================================================================
+// WORK MANAGEMENT TABLES
+// ============================================================================
+
+model WorkStatus {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  created_by  Int?
+  updated_at  DateTime @updatedAt
+  updated_by  Int?
+
+  // Relations
+  work_items WorkItem[]
+  tasks      Task[]
+
+  created_user User? @relation("WorkStatusCreatedBy", fields: [created_by], references: [id], onDelete: Restrict)
+  updated_user User? @relation("WorkStatusUpdatedBy", fields: [updated_by], references: [id], onDelete: Restrict)
+
+  @@map("work_statuses")
+  @@index([name])
+  @@index([is_active])
+}
+
+model WorkItem {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String?
+  customer_id  Int
+  assigned_to  Int?
+  status_id    Int?
+  is_active    Boolean  @default(true)
+  created_at   DateTime @default(now())
+  created_by   Int
+  updated_at   DateTime @updatedAt
+  updated_by   Int
+
+  // Relations
+  customer     Lead      @relation("WorkItemCustomer", fields: [customer_id], references: [id], onDelete: Restrict)
+  assigned_user User?    @relation("WorkItemAssignedTo", fields: [assigned_to], references: [id], onDelete: SetNull)
+  status       WorkStatus? @relation(fields: [status_id], references: [id], onDelete: Restrict)
+  created_user  User     @relation("WorkItemCreatedBy", fields: [created_by], references: [id], onDelete: Restrict)
+  updated_user  User     @relation("WorkItemUpdatedBy", fields: [updated_by], references: [id], onDelete: Restrict)
+  tasks        Task[]
+
+  @@map("work_items")
+  @@index([customer_id])
+  @@index([assigned_to])
+  @@index([status_id])
+  @@index([is_active])
+  @@index([created_at])
+
+  // Back-relations
+}
+
+model Task {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String?
+  work_item_id Int
+  customer_id  Int
+  assigned_to  Int?
+  status_id    Int?
+  is_active    Boolean  @default(true)
+  created_at   DateTime @default(now())
+  created_by   Int
+  updated_at   DateTime @updatedAt
+  updated_by   Int
+
+  // Relations
+  work_item    WorkItem  @relation(fields: [work_item_id], references: [id], onDelete: Restrict)
+  customer     Lead      @relation("TaskCustomer", fields: [customer_id], references: [id], onDelete: Restrict)
+  assigned_user User?    @relation("TaskAssignedTo", fields: [assigned_to], references: [id], onDelete: SetNull)
+  status       WorkStatus? @relation(fields: [status_id], references: [id], onDelete: Restrict)
+  created_user  User     @relation("TaskCreatedBy", fields: [created_by], references: [id], onDelete: Restrict)
+  updated_user  User     @relation("TaskUpdatedBy", fields: [updated_by], references: [id], onDelete: Restrict)
+
+  @@map("tasks")
+  @@index([work_item_id])
+  @@index([customer_id])
+  @@index([assigned_to])
+  @@index([status_id])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+// ============================================================================
+// COMMUNICATION TABLES
+// ============================================================================
+
+model Communication {
+  id         Int      @id @default(autoincrement())
+  lead_id    Int
+  message    String
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  created_by Int
+  updated_at DateTime @updatedAt
+  updated_by Int
+
+  // Relations
+  lead         Lead @relation(fields: [lead_id], references: [id], onDelete: Restrict)
+  created_user User @relation("CommunicationCreatedBy", fields: [created_by], references: [id], onDelete: Restrict)
+  updated_user User @relation("CommunicationUpdatedBy", fields: [updated_by], references: [id], onDelete: Restrict)
+  attachments  CommunicationAttachment[]
+
+  @@map("communications")
+  @@index([lead_id])
+  @@index([is_active])
+}
+
+model CommunicationAttachment {
+  id                Int      @id @default(autoincrement())
+  communication_id  Int
+  file_url          String
+  file_name         String?
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now())
+  created_by        Int
+  updated_at        DateTime @updatedAt
+  updated_by        Int
+
+  // Relations
+  communication Communication @relation(fields: [communication_id], references: [id], onDelete: Cascade)
+  created_user  User          @relation("CommAttachCreatedBy", fields: [created_by], references: [id], onDelete: Restrict)
+  updated_user  User          @relation("CommAttachUpdatedBy", fields: [updated_by], references: [id], onDelete: Restrict)
+
+  @@map("communication_attachments")
+  @@index([communication_id])
+  @@index([is_active])
+}
