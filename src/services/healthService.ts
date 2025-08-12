@@ -1,4 +1,4 @@
-import { prisma } from '../server';
+import { prisma } from '../prisma/client';
 
 export const healthService = {
   async getHealthStatus() {
