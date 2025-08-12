@@ -16,7 +16,7 @@
     "seed": "ts-node src/scripts/seed.ts",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset --force --skip-generate",
-    "vercel-build": "prisma generate && (prisma migrate deploy || prisma db push) && prisma db seed && tsc"
+    "vercel-build": "prisma generate && prisma migrate deploy || true && prisma db push && prisma db seed && tsc"
   },
   "keywords": [
     "express",
