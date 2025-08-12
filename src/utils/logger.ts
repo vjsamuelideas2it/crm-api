@@ -19,29 +19,26 @@ const fileFormat = winston.format.combine(
 );
 
 // Create logger instance
+const transports: winston.transport[] = [];
+
+// Use file transports only when running on a filesystem (not serverless)
+if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'production') {
+  transports.push(
+    new winston.transports.File({ filename: 'logs/error.log', level: 'error', maxsize: 5242880, maxFiles: 5 }),
+    new winston.transports.File({ filename: 'logs/combined.log', maxsize: 5242880, maxFiles: 5 })
+  );
+}
+
 export const logger = winston.createLogger({
   level: logLevel,
   format: fileFormat,
   defaultMeta: { service: 'crm-api' },
-  transports: [
-    // Write all logs with importance level of `error` or less to `error.log`
-    new winston.transports.File({
-      filename: 'logs/error.log',
-      level: 'error',
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
-    }),
-    // Write all logs with importance level of `info` or less to `combined.log`
-    new winston.transports.File({
-      filename: 'logs/combined.log',
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
-    }),
-  ],
+  transports,
 });
 
 // If we're not in production, log to the console with a simple format
-if (process.env.NODE_ENV !== 'production') {
+// Always add console in serverless/production environments
+if (process.env.NODE_ENV !== 'production' || process.env.VERCEL === '1') {
   logger.add(new winston.transports.Console({
     format: consoleFormat
   }));
