@@ -16,7 +16,6 @@ dist/
 build/
 
 # Logs
-logs/
 *.log
 
 # Runtime data
