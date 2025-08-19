@@ -16,6 +16,23 @@
  *     responses:
  *       200:
  *         description: List of communications
+ * /api/communications/filter:
+ *   post:
+ *     summary: Filter communications by arrays of ids
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               lead_ids: { type: array, items: { type: number } }
+ *               created_by_ids: { type: array, items: { type: number } }
+ *     responses:
+ *       200:
+ *         description: Filtered list of communications
  *   post:
  *     summary: Create a communication
  *     security:

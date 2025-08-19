@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { successResponse, errorResponse } from '../utils/response';
-import { getAllTasks, getTaskById, createTask, updateTask, deleteTask } from '../services/taskService';
+import { getAllTasks, getTaskById, createTask, updateTask, deleteTask, filterTasks } from '../services/taskService';
 
 export const taskController = {
   async getAll(req: Request, res: Response) {
@@ -25,6 +25,26 @@ export const taskController = {
       return successResponse(res, task);
     } catch (err: any) {
       return errorResponse(res, err.message || 'Failed to fetch task', err.statusCode || 500);
+    }
+  },
+
+  async filter(req: Request, res: Response) {
+    try {
+      const { customer_ids, work_item_ids, assigned_to_ids, status_ids } = req.body || {};
+      const toNumArray = (arr: any): number[] | undefined => {
+        if (!Array.isArray(arr)) return undefined;
+        const nums = arr.map((v) => parseInt(v, 10)).filter((n) => Number.isFinite(n));
+        return nums.length > 0 ? nums : undefined;
+      };
+      const tasks = await filterTasks({
+        customer_ids: toNumArray(customer_ids),
+        work_item_ids: toNumArray(work_item_ids),
+        assigned_to_ids: toNumArray(assigned_to_ids),
+        status_ids: toNumArray(status_ids),
+      });
+      return successResponse(res, tasks);
+    } catch (err: any) {
+      return errorResponse(res, err.message || 'Failed to filter tasks', err.statusCode || 500);
     }
   },
 

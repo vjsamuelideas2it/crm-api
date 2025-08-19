@@ -25,6 +25,25 @@
  *     responses:
  *       200:
  *         description: List of tasks
+ * /api/tasks/filter:
+ *   post:
+ *     summary: Filter tasks by arrays of ids
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               customer_ids: { type: array, items: { type: number } }
+ *               work_item_ids: { type: array, items: { type: number } }
+ *               assigned_to_ids: { type: array, items: { type: number } }
+ *               status_ids: { type: array, items: { type: number } }
+ *     responses:
+ *       200:
+ *         description: Filtered list of tasks
  *   post:
  *     summary: Create a task
  *     security:

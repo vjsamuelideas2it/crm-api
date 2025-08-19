@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { successResponse, errorResponse } from '../utils/response';
 import { 
-  getAllWorkItems, getWorkItemById, createWorkItem, updateWorkItem, deleteWorkItem 
+  getAllWorkItems, getWorkItemById, createWorkItem, updateWorkItem, deleteWorkItem, filterWorkItems
 } from '../services/workItemService';
 
 export const workItemController = {
@@ -26,6 +26,25 @@ export const workItemController = {
       return successResponse(res, item);
     } catch (err: any) {
       return errorResponse(res, err.message || 'Failed to fetch work item', err.statusCode || 500);
+    }
+  },
+
+  async filter(req: Request, res: Response) {
+    try {
+      const { customer_ids, assigned_to_ids, status_ids } = req.body || {};
+      const toNumArray = (arr: any): number[] | undefined => {
+        if (!Array.isArray(arr)) return undefined;
+        const nums = arr.map((v) => parseInt(v, 10)).filter((n) => Number.isFinite(n));
+        return nums.length > 0 ? nums : undefined;
+      };
+      const items = await filterWorkItems({
+        customer_ids: toNumArray(customer_ids),
+        assigned_to_ids: toNumArray(assigned_to_ids),
+        status_ids: toNumArray(status_ids),
+      });
+      return successResponse(res, items);
+    } catch (err: any) {
+      return errorResponse(res, err.message || 'Failed to filter work items', err.statusCode || 500);
     }
   },
 

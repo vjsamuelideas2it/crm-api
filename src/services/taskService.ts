@@ -100,6 +100,32 @@ export const getAllTasks = async (filters?: { customer_id?: number; work_item_id
   return tasks;
 };
 
+export const filterTasks = async (filters: { customer_ids?: number[]; work_item_ids?: number[]; assigned_to_ids?: number[]; status_ids?: number[] }): Promise<any[]> => {
+  const andClauses: any[] = [{ is_active: true }];
+
+  if (filters.customer_ids && filters.customer_ids.length > 0) {
+    andClauses.push({ customer_id: { in: filters.customer_ids } });
+  }
+  if (filters.work_item_ids && filters.work_item_ids.length > 0) {
+    andClauses.push({ work_item_id: { in: filters.work_item_ids } });
+  }
+  if (filters.assigned_to_ids && filters.assigned_to_ids.length > 0) {
+    andClauses.push({
+      OR: [
+        { assigned_to: { in: filters.assigned_to_ids } },
+        { work_item: { assigned_to: { in: filters.assigned_to_ids } } },
+      ],
+    });
+  }
+  if (filters.status_ids && filters.status_ids.length > 0) {
+    andClauses.push({ status_id: { in: filters.status_ids } });
+  }
+
+  const where: any = { AND: andClauses };
+  const tasks = await prisma.task.findMany({ where, include: getTaskIncludes(), orderBy: { created_at: 'desc' } });
+  return tasks;
+};
+
 export const getTaskById = async (id: number): Promise<any> => {
   const task = await prisma.task.findFirst({ where: { id, is_active: true }, include: getTaskIncludes() });
   if (!task) {
