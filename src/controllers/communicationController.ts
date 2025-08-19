@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { successResponse, errorResponse } from '../utils/response';
-import { listCommunications, getCommunicationById, createCommunication, updateCommunication, deleteCommunication } from '../services/communicationService';
+import { listCommunications, getCommunicationById, createCommunication, updateCommunication, deleteCommunication, filterCommunications } from '../services/communicationService';
 
 export const communicationController = {
   async list(req: Request, res: Response) {
@@ -23,6 +23,24 @@ export const communicationController = {
       return successResponse(res, item);
     } catch (err: any) {
       return errorResponse(res, err.message || 'Failed to fetch communication', err.statusCode || 500);
+    }
+  },
+
+  async filter(req: Request, res: Response) {
+    try {
+      const { lead_ids, created_by_ids } = req.body || {};
+      const toNumArray = (arr: any): number[] | undefined => {
+        if (!Array.isArray(arr)) return undefined;
+        const nums = arr.map((v) => parseInt(v, 10)).filter((n) => Number.isFinite(n));
+        return nums.length > 0 ? nums : undefined;
+      };
+      const items = await filterCommunications({
+        lead_ids: toNumArray(lead_ids),
+        created_by_ids: toNumArray(created_by_ids),
+      });
+      return successResponse(res, items);
+    } catch (err: any) {
+      return errorResponse(res, err.message || 'Failed to filter communications', err.statusCode || 500);
     }
   },
 

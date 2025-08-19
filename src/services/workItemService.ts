@@ -38,6 +38,27 @@ export const getAllWorkItems = async (filters?: { customer_id?: number; assigned
   return items;
 };
 
+export const filterWorkItems = async (filters: { customer_ids?: number[]; assigned_to_ids?: number[]; status_ids?: number[] }): Promise<any[]> => {
+  const andClauses: any[] = [{ is_active: true }];
+
+  if (filters.customer_ids && filters.customer_ids.length > 0) {
+    andClauses.push({ customer_id: { in: filters.customer_ids } });
+  }
+
+  if (filters.assigned_to_ids && filters.assigned_to_ids.length > 0) {
+    andClauses.push({ assigned_to: { in: filters.assigned_to_ids } });
+  }
+
+  if (filters.status_ids && filters.status_ids.length > 0) {
+    andClauses.push({ status_id: { in: filters.status_ids } });
+  }
+
+  const where: any = { AND: andClauses };
+
+  const items = await prisma.workItem.findMany({ where, include: getWorkItemIncludes(), orderBy: { created_at: 'desc' } });
+  return items;
+};
+
 export const getWorkItemById = async (id: number): Promise<any> => {
   const item = await prisma.workItem.findFirst({ where: { id, is_active: true }, include: getWorkItemIncludes() });
   if (!item) {

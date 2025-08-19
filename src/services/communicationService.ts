@@ -24,6 +24,19 @@ export const listCommunications = async (filters: { lead_id?: number; created_by
   return items;
 };
 
+export const filterCommunications = async (filters: { lead_ids?: number[]; created_by_ids?: number[] }) => {
+  const andClauses: any[] = [{ is_active: true }];
+  if (filters.lead_ids && filters.lead_ids.length > 0) {
+    andClauses.push({ lead_id: { in: filters.lead_ids } });
+  }
+  if (filters.created_by_ids && filters.created_by_ids.length > 0) {
+    andClauses.push({ created_by: { in: filters.created_by_ids } });
+  }
+  const where: any = { AND: andClauses };
+  const items = await prisma.communication.findMany({ where, include, orderBy: { created_at: 'desc' } });
+  return items;
+};
+
 export const getCommunicationById = async (id: number) => {
   const item = await prisma.communication.findFirst({ where: { id, is_active: true }, include });
   if (!item) {

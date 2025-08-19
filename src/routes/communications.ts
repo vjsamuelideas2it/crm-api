@@ -8,6 +8,7 @@ router.use(requireAuth);
 
 router.get('/', communicationController.list);
 router.get('/:id', communicationController.detail);
+router.post('/filter', communicationController.filter);
 router.post('/', communicationController.create);
 router.put('/:id', communicationController.update);
 router.delete('/:id', communicationController.remove);

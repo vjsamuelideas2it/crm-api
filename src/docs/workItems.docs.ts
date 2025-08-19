@@ -22,6 +22,24 @@
  *     responses:
  *       200:
  *         description: List of work items
+ * /api/work-items/filter:
+ *   post:
+ *     summary: Filter work items by arrays of ids
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               customer_ids: { type: array, items: { type: number } }
+ *               assigned_to_ids: { type: array, items: { type: number } }
+ *               status_ids: { type: array, items: { type: number } }
+ *     responses:
+ *       200:
+ *         description: Filtered list of work items
  *   post:
  *     summary: Create a work item
  *     security:
